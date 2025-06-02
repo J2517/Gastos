@@ -3,22 +3,39 @@
         "destino_nacional": true,
         "fecha_inicio": "2025-06-05",
         "fecha_fin": "2025-06-08",
-        "presupuesto_diario": 100000.0,
+        "presupuesto_diario": 10000.0,
         "moneda": "cop",
         "finalizado": true,
         "gastos": [
             {
-                "fecha": "2025-06-07",
+                "fecha": "2025-06-05",
                 "valor": 50000.0,
                 "valor_cop": 50000.0,
-                "tipo": "TRANSPORTE",
+                "tipo": "ALIMENTACION",
                 "medio": "EFECTIVO"
             },
             {
-                "fecha": "2025-06-07",
-                "valor": 70000.0,
-                "valor_cop": 70000.0,
+                "fecha": "2025-06-05",
+                "valor": 25000.0,
+                "valor_cop": 25000.0,
                 "tipo": "COMPRAS",
+                "medio": "TARJETA"
+            }
+        ]
+    },
+    {
+        "destino_nacional": false,
+        "fecha_inicio": "2025-06-05",
+        "fecha_fin": "2025-06-08",
+        "presupuesto_diario": 50000.0,
+        "moneda": "usd",
+        "finalizado": true,
+        "gastos": [
+            {
+                "fecha": "2025-06-07",
+                "valor": 5.0,
+                "valor_cop": 20709.4956879,
+                "tipo": "TRANSPORTE",
                 "medio": "TARJETA"
             }
         ]
