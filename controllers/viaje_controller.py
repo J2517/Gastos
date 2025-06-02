@@ -4,8 +4,8 @@ from models.gasto import Gasto
 from utils.enums import TipoGasto, MedioPago
 from services.exchange_service import ExchangeService
 from services.reporte_service import ReporteService
-from data.persistencia import guardar_viaje, cargar_viajes
-        
+from data.persistencia import guardar_viaje
+   
 class ViajeController:
     def __init__(self):
         self.viaje_actual: Viaje | None = None
@@ -13,7 +13,7 @@ class ViajeController:
         self.reporte_service = ReporteService()
 
     def iniciar_aplicacion(self):
-        self.seleccionar_o_crear_viaje()
+        self.crear_viaje()
         while not self.viaje_actual.finalizado:
             self.menu()
 
@@ -53,7 +53,7 @@ class ViajeController:
                 print("⚠️ Fecha fuera del rango del viaje. Intente con una fecha válida.")
                 return
 
-            valor = float(input("Valor del gasto(en la moneda del país donde se encuentra): "))
+            valor = float(input("Valor del gasto: "))
             medio = self._seleccionar_enum(MedioPago, "Medio de pago")
             tipo = self._seleccionar_enum(TipoGasto, "Tipo de gasto")
 

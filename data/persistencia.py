@@ -35,39 +35,46 @@ def dict_to_viaje(data: dict) -> Viaje:
         moneda=data["moneda"]
     )
 
-    # Primero agregamos los gastos
-    for g in data["gastos"]:
-        gasto = Gasto(
+    # Agregamos los gastos directamente (evitamos el método que valida)
+    viaje.gastos = [
+        Gasto(
             fecha=date.fromisoformat(g["fecha"]),
             valor=g["valor"],
             valor_cop=g["valor_cop"],
             tipo=TipoGasto[g["tipo"]],
             medio=MedioPago[g["medio"]]
         )
-        viaje.gastos.append(gasto)  # Usamos append directo, no el método con validación
+        for g in data["gastos"]
+    ]
 
-    # Luego marcamos si está finalizado
+    # Solo después marcamos si está finalizado
     viaje.finalizado = data["finalizado"]
     return viaje
-
 
 def guardar_viaje(viaje: Viaje):
     viajes = cargar_viajes()
     actualizado = False
 
+    # Buscar si ya existe un viaje con mismas fechas y moneda
     for i, v in enumerate(viajes):
-        if (v.fecha_inicio == viaje.fecha_inicio and
+        if (
+            v.fecha_inicio == viaje.fecha_inicio and
             v.fecha_fin == viaje.fecha_fin and
-            v.moneda == viaje.moneda):
-            viajes[i] = viaje_to_dict(viaje)
+            v.moneda == viaje.moneda
+        ):
+            viajes[i] = viaje
             actualizado = True
             break
 
+    # Si no está, agregarlo
     if not actualizado:
-        viajes.append(viaje_to_dict(viaje))
+        viajes.append(viaje)
+
+    # Convertir todos a dicts para guardar
+    viajes_dict = [viaje_to_dict(v) for v in viajes]
 
     with open(ARCHIVO_DATOS, "w", encoding="utf-8") as f:
-        json.dump(viajes, f, indent=4)
+        json.dump(viajes_dict, f, indent=4)
 
 
 def cargar_viajes() -> list:
