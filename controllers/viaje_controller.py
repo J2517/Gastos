@@ -99,32 +99,3 @@ class ViajeController:
         for tipo, valores in tipos.items():
             print(f"{tipo.value}: Efectivo={valores[MedioPago.EFECTIVO]:.2f}, Tarjeta={valores[MedioPago.TARJETA]:.2f}")
             
-    def seleccionar_o_crear_viaje(self):
-        viajes = cargar_viajes()
-        if viajes:
-            print("\n📂 Viajes disponibles:")
-            for idx, v in enumerate(viajes, start=1):
-                estado = "Finalizado" if v.finalizado else "Activo"
-                print(f"{idx}. {v.fecha_inicio} - {v.fecha_fin} | Moneda: {v.moneda.upper()} | {estado}")
-
-            print(f"{len(viajes)+1}. Crear un nuevo viaje")
-
-            while True:
-                try:
-                    opcion = int(input("Seleccione una opción: "))
-                    if opcion == len(viajes) + 1:
-                        self.crear_viaje()
-                    elif 1 <= opcion <= len(viajes):
-                        viaje = viajes[opcion - 1]
-                        if viaje.finalizado:
-                            print("⚠️ Este viaje ya está finalizado. Cree uno nuevo.")
-                            continue
-                        self.viaje_actual = viaje
-                    else:
-                        raise ValueError()
-                    break
-                except Exception:
-                    print("❌ Opción inválida. Intente de nuevo.")
-        else:
-            print("🆕 No hay viajes previos. Vamos a crear uno nuevo.")
-            self.crear_viaje()
