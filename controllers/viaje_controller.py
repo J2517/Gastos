@@ -36,20 +36,29 @@ class ViajeController:
     def crear_viaje(self):
         """
         Solicita al usuario los datos para crear un viaje nuevo.
-        Reintenta ante entradas inválidas y define si el viaje es nacional o internacional.
+        Reintenta ante entradas inválidas y evita duplicados por nombre.
         """
+        viajes_existentes = cargar_viajes()
+        nombres_existentes = [v.nombre.strip().lower() for v in viajes_existentes]
+
         while True:
             try:
                 nombre = input("Ponle un nombre a tu viaje: ").strip()
+                if nombre.lower() in nombres_existentes:
+                    print("❌ Ya existe un viaje con ese nombre. Intente con uno diferente.\n")
+                    continue
+
                 nacional = input("¿El viaje es nacional? (s/n): ").strip().lower() == 's'
                 fecha_inicio = self._leer_fecha("Fecha de inicio (YYYY-MM-DD): ")
                 fecha_fin = self._leer_fecha("Fecha de fin (YYYY-MM-DD): ")
                 presupuesto = float(input("Presupuesto diario (en COP): "))
                 moneda = "cop" if nacional else input("Moneda del país visitado (ej. usd, eur): ").strip().lower()
+
                 self.viaje_actual = Viaje(nombre, nacional, fecha_inicio, fecha_fin, presupuesto, moneda)
                 break
             except Exception as e:
                 print(f"[ERROR] Entrada inválida: {e}. Intente nuevamente.\n")
+
 
     def seleccionar_viaje_existente(self):
         """
