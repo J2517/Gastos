@@ -182,5 +182,4 @@ class ViajeController:
         tipos = self.reporte_service.reporte_por_tipo(self.viaje_actual)
         for tipo, valores in tipos.items():
             print(f"{tipo.value}: Efectivo={valores[MedioPago.EFECTIVO]:.2f}, Tarjeta={valores[MedioPago.TARJETA]:.2f}")
-
-            
+      

@@ -1,47 +1,67 @@
-
 import unittest
 from unittest.mock import patch, MagicMock
 from controllers.viaje_controller import ViajeController
 from datetime import date
 from models.viaje import Viaje
-from utils.enums import TipoGasto, MedioPago
-from models.gasto import Gasto
 
 class TestRegistrarGasto(unittest.TestCase):
+    """Conjunto de pruebas para el método registrar_gasto del controlador de viaje."""
+
     def setUp(self):
+        """Crea un viaje de prueba antes de cada test."""
         self.controller = ViajeController()
-        self.controller.viaje_actual = Viaje(False, date(2024, 6, 1), date(2024, 6, 10), 100000, "usd")
+        self.controller.viaje_actual = Viaje("Viaje1", True, date(2024, 6, 1), date(2024, 6, 10), 50000, "cop")
 
-    @patch("builtins.input")
-    @patch("controllers.viaje_controller.ExchangeService.convertir_a_cop")
-    @patch("controllers.viaje_controller.Viaje.agregar_gasto")
-    def test_registrar_gasto_exitosamente(self, mock_agregar, mock_convertir, mock_input):
-        mock_input.side_effect = [
-            "2024-06-02",  # Fecha del gasto
-            "50",          # Valor
-            "1",           # Medio de pago (efectivo)
-            "2"            # Tipo de gasto (alojamiento)
-        ]
-        mock_convertir.return_value = 200000
-
+    @patch("builtins.input", side_effect=["2024-06-02", "30000", "1", "1"])
+    @patch("controllers.viaje_controller.ExchangeService.convertir_a_cop", return_value=30000)
+    def test_registrar_gasto_valido(self, mock_convertir, mock_input):
+        """Debe agregar un gasto correctamente y calcular el presupuesto restante."""
         self.controller.registrar_gasto()
+        self.assertEqual(len(self.controller.viaje_actual.gastos), 1)
+        self.assertEqual(self.controller.viaje_actual.gastos[0].valor_cop, 30000)
 
-        mock_convertir.assert_called_once_with(50.0, "usd")
-        self.assertTrue(mock_agregar.called)
-
-    @patch("builtins.input")
-    def test_fecha_fuera_de_rango_no_agrega_gasto(self, mock_input):
-        mock_input.side_effect = [
-            "2024-07-01",  # Fecha fuera de rango
-            "100",         # Valor
-            "1",           # Medio de pago
-            "1"            # Tipo de gasto
-        ]
-        with patch.object(self.controller.viaje_actual, 'agregar_gasto') as mock_agregar:
+    @patch("builtins.input", side_effect=["2024-07-01", "20000", "1", "1"])
+    def test_gasto_fuera_de_rango(self, mock_input):
+        """No debe agregar gasto si la fecha está fuera del rango del viaje."""
+        with patch("builtins.print") as mock_print:
             self.controller.registrar_gasto()
-            mock_agregar.assert_not_called()
+            mock_print.assert_any_call("⚠️ Fecha fuera del rango del viaje. Intente con una fecha válida.")
+            self.assertEqual(len(self.controller.viaje_actual.gastos), 0)
 
-    @patch("builtins.input", side_effect=["2024-06-03", "valor no numérico", "1", "1"])
-    def test_valor_invalido_lanza_error(self, mock_input):
-        with patch("controllers.viaje_controller.ExchangeService.convertir_a_cop", return_value=0):
-            self.controller.registrar_gasto()  # Debe imprimir error pero no lanzar excepción
+    @patch("builtins.input", side_effect=["2024-06-02", "abc", "1", "1"])
+    def test_valor_no_numerico(self, mock_input):
+        """Manejo de valor de gasto no numérico: debe imprimir error y no agregar gasto."""
+        with patch("builtins.print") as mock_print:
+            self.controller.registrar_gasto()
+            self.assertEqual(len(self.controller.viaje_actual.gastos), 0)
+            self.assertTrue(mock_print.called)
+
+    @patch("builtins.input", side_effect=["2024-06-02", "10000", "99", "1", "1"])
+    def test_medio_pago_invalido(self, mock_input):
+        """Medio de pago inválido: debe imprimir mensaje y pedir nuevo input."""
+        with patch("builtins.print") as mock_print:
+            self.controller.registrar_gasto()
+            mock_print.assert_any_call("❌ Opción inválida. Intente nuevamente.")
+
+    @patch("builtins.input", side_effect=["2024-06-02", "10000", "1", "99", "1"])
+    def test_tipo_gasto_invalido(self, mock_input):
+        """Tipo de gasto inválido: debe imprimir mensaje y pedir nuevo input."""
+        with patch("builtins.print") as mock_print:
+            self.controller.registrar_gasto()
+            mock_print.assert_any_call("❌ Opción inválida. Intente nuevamente.")
+
+    def test_gasto_en_viaje_finalizado(self):
+        """No debe agregar gasto si el viaje está marcado como finalizado."""
+        self.controller.viaje_actual.finalizado = True
+        with patch("builtins.input", side_effect=["2024-06-02", "30000", "1", "1"]):
+            with patch("builtins.print") as mock_print:
+                self.controller.registrar_gasto()
+                self.assertEqual(len(self.controller.viaje_actual.gastos), 0)
+                self.assertTrue(mock_print.called)
+
+    @patch("builtins.input", side_effect=["02-06-2024", "2024-06-02", "30000", "1", "1"])
+    def test_fecha_formato_invalido(self, mock_input):
+        """Debe pedir la fecha nuevamente si el formato es inválido."""
+        with patch("builtins.print") as mock_print:
+            self.controller.registrar_gasto()
+            mock_print.assert_any_call("⚠️ Fecha inválida. Formato correcto: YYYY-MM-DD")
