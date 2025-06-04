@@ -8,6 +8,7 @@ ARCHIVO_DATOS = "data/viajes.json"
 
 def viaje_to_dict(viaje: Viaje) -> dict:
     return {
+        "nombre": viaje.nombre,  # Identificador único
         "destino_nacional": viaje.destino_nacional,
         "fecha_inicio": viaje.fecha_inicio.isoformat(),
         "fecha_fin": viaje.fecha_fin.isoformat(),
@@ -28,6 +29,7 @@ def viaje_to_dict(viaje: Viaje) -> dict:
 
 def dict_to_viaje(data: dict) -> Viaje:
     viaje = Viaje(
+        nombre=data["nombre"],
         destino_nacional=data["destino_nacional"],
         fecha_inicio=date.fromisoformat(data["fecha_inicio"]),
         fecha_fin=date.fromisoformat(data["fecha_fin"]),
@@ -35,7 +37,6 @@ def dict_to_viaje(data: dict) -> Viaje:
         moneda=data["moneda"]
     )
 
-    # Agregamos los gastos directamente (evitamos el método que valida)
     viaje.gastos = [
         Gasto(
             fecha=date.fromisoformat(g["fecha"]),
@@ -47,7 +48,6 @@ def dict_to_viaje(data: dict) -> Viaje:
         for g in data["gastos"]
     ]
 
-    # Solo después marcamos si está finalizado
     viaje.finalizado = data["finalizado"]
     return viaje
 
@@ -55,27 +55,20 @@ def guardar_viaje(viaje: Viaje):
     viajes = cargar_viajes()
     actualizado = False
 
-    # Buscar si ya existe un viaje con mismas fechas y moneda
+    # Reemplazar si ya existe uno con el mismo nombre
     for i, v in enumerate(viajes):
-        if (
-            v.fecha_inicio == viaje.fecha_inicio and
-            v.fecha_fin == viaje.fecha_fin and
-            v.moneda == viaje.moneda
-        ):
+        if v.nombre.lower() == viaje.nombre.lower():
             viajes[i] = viaje
             actualizado = True
             break
 
-    # Si no está, agregarlo
     if not actualizado:
         viajes.append(viaje)
 
-    # Convertir todos a dicts para guardar
     viajes_dict = [viaje_to_dict(v) for v in viajes]
 
     with open(ARCHIVO_DATOS, "w", encoding="utf-8") as f:
         json.dump(viajes_dict, f, indent=4)
-
 
 def cargar_viajes() -> list:
     try:
@@ -84,3 +77,4 @@ def cargar_viajes() -> list:
             return [dict_to_viaje(d) for d in datos]
     except (FileNotFoundError, json.JSONDecodeError):
         return []
+

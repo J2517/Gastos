@@ -4,8 +4,8 @@ from models.gasto import Gasto
 from utils.enums import TipoGasto, MedioPago
 from services.exchange_service import ExchangeService
 from services.reporte_service import ReporteService
-from data.persistencia import guardar_viaje
-   
+from data.persistencia import guardar_viaje, cargar_viajes
+
 class ViajeController:
     def __init__(self):
         self.viaje_actual: Viaje | None = None
@@ -15,10 +15,21 @@ class ViajeController:
     def iniciar_aplicacion(self):
         """
         Inicia la aplicación desde consola.
-        Crea un nuevo viaje y mantiene al usuario en el menú principal mientras el viaje esté activo.
-        Termina cuando el usuario finaliza el viaje.
+        Permite crear o cargar un viaje y mantener al usuario en el menú principal mientras el viaje esté activo.
         """
-        self.crear_viaje()
+        print("--- Bienvenido ---")
+        print("1. Crear nuevo viaje")
+        print("2. Cargar viaje existente")
+        opcion = input("Seleccione una opción: ").strip()
+
+        if opcion == "1":
+            self.crear_viaje()
+        elif opcion == "2":
+            self.seleccionar_viaje_existente()
+        else:
+            print("❌ Opción inválida.")
+            return
+
         while not self.viaje_actual.finalizado:
             self.menu()
 
@@ -29,29 +40,58 @@ class ViajeController:
         """
         while True:
             try:
+                nombre = input("Ponle un nombre a tu viaje: ").strip()
                 nacional = input("¿El viaje es nacional? (s/n): ").strip().lower() == 's'
                 fecha_inicio = self._leer_fecha("Fecha de inicio (YYYY-MM-DD): ")
                 fecha_fin = self._leer_fecha("Fecha de fin (YYYY-MM-DD): ")
                 presupuesto = float(input("Presupuesto diario (en COP): "))
                 moneda = "cop" if nacional else input("Moneda del país visitado (ej. usd, eur): ").strip().lower()
-                self.viaje_actual = Viaje(nacional, fecha_inicio, fecha_fin, presupuesto, moneda)
+                self.viaje_actual = Viaje(nombre, nacional, fecha_inicio, fecha_fin, presupuesto, moneda)
                 break
             except Exception as e:
                 print(f"[ERROR] Entrada inválida: {e}. Intente nuevamente.\n")
+
+    def seleccionar_viaje_existente(self):
+        """
+        Permite al usuario seleccionar un viaje existente por nombre si aún no ha finalizado.
+        """
+        viajes = cargar_viajes()
+        viajes_activos = [v for v in viajes if not v.finalizado]
+
+        if not viajes_activos:
+            print("⚠️ No hay viajes activos disponibles.")
+            self.crear_viaje()
+            return
+
+        print("\n📋 Viajes activos disponibles:")
+        for v in viajes_activos:
+            print(f"- {v.nombre} ({v.fecha_inicio} a {v.fecha_fin}, {v.moneda.upper()})")
+
+        while True:
+            nombre = input("🔎 Escriba el nombre exacto del viaje que desea cargar: ").strip()
+            seleccionados = [v for v in viajes_activos if v.nombre.lower() == nombre.lower()]
+            if seleccionados:
+                self.viaje_actual = seleccionados[0]
+                break
+            else:
+                print("❌ No se encontró un viaje con ese nombre. Intente de nuevo.")
 
     def menu(self):
         """
         Muestra las opciones principales durante un viaje activo:
         1. Registrar un gasto
         2. Ver reportes
-        3. Finalizar y guardar el viaje
+        3. Finalizar viaje (y guardar)
+        4. Salir sin finalizar (se guarda el progreso)
         """
         print("\n--- Menú ---")
         print("1. Registrar gasto")
         print("2. Ver reportes")
         print("3. Finalizar viaje")
+        print("4. Salir sin finalizar")
 
         opcion = input("Seleccione una opción: ").strip()
+        
         if opcion == "1":
             self.registrar_gasto()
         elif opcion == "2":
@@ -60,6 +100,12 @@ class ViajeController:
             self.viaje_actual.finalizar()
             guardar_viaje(self.viaje_actual)
             print("✅ Viaje finalizado y guardado.")
+        elif opcion == "4":
+            guardar_viaje(self.viaje_actual)
+            print("📁 Progreso guardado. Puedes continuar este viaje más adelante.")
+            exit()
+        else:
+            print("❌ Opción no válida.")
 
     def registrar_gasto(self):
         """
@@ -67,7 +113,6 @@ class ViajeController:
         - Valida que la fecha esté dentro del rango del viaje.
         - Convierte el valor a COP si es necesario.
         - Muestra la diferencia frente al presupuesto diario.
-        - Maneja errores de entrada sin detener la aplicación.
         """
         try:
             fecha = self._leer_fecha("Fecha del gasto (YYYY-MM-DD): ")
@@ -137,4 +182,5 @@ class ViajeController:
         tipos = self.reporte_service.reporte_por_tipo(self.viaje_actual)
         for tipo, valores in tipos.items():
             print(f"{tipo.value}: Efectivo={valores[MedioPago.EFECTIVO]:.2f}, Tarjeta={valores[MedioPago.TARJETA]:.2f}")
+
             

@@ -4,9 +4,12 @@ from models.gasto import Gasto
 class Viaje:
     """
     Representa un viaje realizado por el usuario, con un rango de fechas y un presupuesto diario.
-    Puede registrar múltiples gastos y determinar si está activo o finalizado.
+    Cada viaje tiene un nombre único que sirve como identificador. Puede registrar múltiples gastos
+    y determinar si está activo o finalizado.
     """
-    def __init__(self, destino_nacional: bool, fecha_inicio: date, fecha_fin: date, presupuesto_diario: float, moneda: str = 'COP'):
+    def __init__(self, nombre: str, destino_nacional: bool, fecha_inicio: date,
+                 fecha_fin: date, presupuesto_diario: float, moneda: str = 'COP'):
+        self.nombre = nombre  # Identificador del viaje definido por el usuario
         self.destino_nacional = destino_nacional
         self.fecha_inicio = fecha_inicio
         self.fecha_fin = fecha_fin
